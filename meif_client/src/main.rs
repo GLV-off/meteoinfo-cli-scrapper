@@ -25,7 +25,8 @@ fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error>  {
 
     let cont = resp
         .body_mut()
-        .read_to_vec()?;
+        .with_config()
+            .read_to_vec()?;
 
     Ok(cont)
 }
@@ -64,7 +65,7 @@ async fn main() -> Result<(), ureq::Error> {
     };
        
     let document = Html::parse_document(&content);
-    let sel = Selector::parse("a[href^='/images/media/satel/']")
+    let sel = Selector::parse("a[href^='/images/media/satel/res']")
         .expect("Selector parsing failed!");    
     let images_paths = get_images_paths(document.select(&sel));
 
