@@ -1,5 +1,17 @@
 use scraper::{Html, Selector, html::Select};
 
+use simplelog::{
+    LevelFilter,
+    CombinedLogger,
+    TermLogger,
+    WriteLogger,
+    Config,
+    TerminalMode,
+    ColorChoice
+};
+
+use log::info;
+
 fn get_content_file<C>(path: &str, on_error: C) -> String
 where
     C: FnOnce(std::io::Error),
@@ -46,13 +58,27 @@ fn get_images_paths(sel: Select) -> Vec<String> {
 
 #[tokio::main]
 async fn main() -> Result<(), ureq::Error> {
+    CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Info, 
+                Config::default(), 
+                TerminalMode::Mixed, 
+                ColorChoice::Auto),
+            WriteLogger::new(LevelFilter::Info, 
+                Config::default(), 
+                std::fs::File::create("my_rust_binary.log").unwrap()),
+        ]
+    ).unwrap();
+
     let host = "https://meteoinfo.ru";
     let url_images = String::from(host) + "/satellite-images";
     const FILENAME: &str = "content.html";
 
     let content = if std::fs::exists(FILENAME)? {
+        info!("parsing filename");
         get_content_file(FILENAME, |e| println!("Error reading file: {}", e))
     } else {
+        info!("parsing web content");
         get_content(url_images)?
     };
 
@@ -65,7 +91,7 @@ async fn main() -> Result<(), ureq::Error> {
         .iter()
         .enumerate()
     {
-        println!("{}: {}", index, image_path);
+        info!("{}: {}", index, image_path);       
 
         let image_content = get_content_bytes(String::from(host) + image_path)?;
 
