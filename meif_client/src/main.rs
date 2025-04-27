@@ -1,14 +1,8 @@
-use std::io;
+use scraper::{Html, Selector, html::Select};
 
-use scraper::{
-    Html,
-    html::Select,
-    Selector
-};
-use ureq;
-
-fn get_content_file<C>(path: &str, on_error: C) -> String 
-    where C:FnOnce(io::Error)
+fn get_content_file<C>(path: &str, on_error: C) -> String
+where
+    C: FnOnce(std::io::Error),
 {
     match std::fs::read_to_string(path) {
         Ok(content) => content,
@@ -19,21 +13,19 @@ fn get_content_file<C>(path: &str, on_error: C) -> String
     }
 }
 
-fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error>  {
-    let mut resp = ureq::get(url)
-        .call()?;
+fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error> {
+    let mut resp = ureq::get(url).call()?;
 
     let cont = resp
         .body_mut()
         .with_config()
-            .read_to_vec()?;
+        .read_to_vec()?;
 
     Ok(cont)
 }
 
 fn get_content(url: String) -> Result<String, ureq::Error> {
-    let mut resp = ureq::get(url)
-        .call()?;
+    let mut resp = ureq::get(url).call()?;
 
     let cont = resp
         .body_mut()
@@ -43,13 +35,13 @@ fn get_content(url: String) -> Result<String, ureq::Error> {
 }
 
 fn get_images_paths(sel: Select) -> Vec<String> {
-    sel.map(|x| 
+    sel.map(|x| {
         x.value()
             .attr("href")
             .unwrap_or("")
             .to_string()
-        )
-        .collect()
+    })
+    .collect()
 }
 
 #[tokio::main]
@@ -58,18 +50,21 @@ async fn main() -> Result<(), ureq::Error> {
     let url_images = String::from(host) + "/satellite-images";
     const FILENAME: &str = "content.html";
 
-    let content = if std::fs::exists(FILENAME )? {
+    let content = if std::fs::exists(FILENAME)? {
         get_content_file(FILENAME, |e| println!("Error reading file: {}", e))
     } else {
         get_content(url_images)?
     };
-       
+
     let document = Html::parse_document(&content);
     let sel = Selector::parse("a[href^='/images/media/satel/res']")
-        .expect("Selector parsing failed!");    
+        .expect("Selector parsing failed!");
     let images_paths = get_images_paths(document.select(&sel));
 
-    for (index, image_path) in images_paths.iter().enumerate() {
+    for (index, image_path) in images_paths
+        .iter()
+        .enumerate()
+    {
         println!("{}: {}", index, image_path);
 
         let image_content = get_content_bytes(String::from(host) + image_path)?;
