@@ -19,13 +19,13 @@ async fn main() -> Result<(), ureq::Error> {
     let url_images = get_images_url(&host);
     let content = get_content(url_images, FILENAME_IMAGES)?;
     let images_paths = parse_images_from_content(content);
-    process_images(&host, images_paths)?;
+    process_images_gif(&host, images_paths)?;
 
-    // GLV: Prototyping parsing synaptic map's
     let url_synaptic = get_synaptic_url(&host);
     let content = get_content(url_synaptic, FILENAME_SYNAPT)?;
-    std::fs::write(FILENAME_SYNAPT, content)?;
-
+    let synaptic_paths = parse_synaptic_from_content(content);
+    process_images_png(synaptic_paths)?;
+ 
     Ok(())
 }
 
@@ -109,7 +109,7 @@ fn parse_images_from_content(content: String) -> Vec<String> {
     images_paths
 }
 
-fn process_images(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
+fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
     for (index, image_path) in images
         .iter()
         .enumerate()
@@ -121,6 +121,39 @@ fn process_images(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
         std::fs::write(format!("img_{}.gif", index), image_content)?;
     }
     Ok(())
+}
+
+fn get_synaptic_url(host: &String) -> String {
+    format!("{}/mapsynop", host)
+}
+
+fn parse_synaptic_from_content(content: String) -> Vec<String> {
+        let document = Html::parse_document(&content);
+    let sel = Selector::parse("meta[property='og:image']")
+        .expect("Selector parsing failed!");       
+    let ss = document.select(&sel);
+    let local: Vec<String> = ss.map(|x| {
+            x.value()
+                .attr("content")
+                .unwrap_or("")
+                .to_string()
+        })
+        .collect();
+    local
+}
+
+fn process_images_png(images: Vec<String>) -> Result<(), ureq::Error> {
+    for (index, image_path) in images
+        .iter()
+        .enumerate()
+    {
+        info!("{}: {}", index, image_path);
+
+        let image_content = get_content_bytes(image_path.to_string())?;
+
+        std::fs::write(format!("syn_img_{}.png", index), image_content)?;
+    }
+    Ok(())    
 }
 
 fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error> {
@@ -144,6 +177,3 @@ fn get_images_paths(sel: Select) -> Vec<String> {
     .collect()
 }
 
-fn get_synaptic_url(host: &String) -> String {
-    format!("{}/mapsynop", host)
-}
