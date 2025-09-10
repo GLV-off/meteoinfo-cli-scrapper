@@ -1,5 +1,5 @@
 [workspace]
 resolver = "2"
 members = [
-  "meif_client"
-, "meif_client_gui"]
+  "crates/*"
+]

@@ -6,7 +6,8 @@ use simplelog::{
     WriteLogger,
 };
 
-const GLV_METEOINFO_HOST: &str = "";
+const GLV_METEOINFO_HOST_DEFAULT: &str = "https://meteoinfo.ru";
+const GLV_METEOINFO_HOST: &str = "GLV_METEOINFO_HOST";
 const FILENAME_SYNAPT: &str = "content_synaptic.html";
 const FILENAME_IMAGES: &str = "content_images.html";
 const DEFAULT_LOG_FILENAME: &str = "meteo_log.log";
@@ -51,10 +52,9 @@ fn get_host() -> String {
     match get_meteoinfo_host() {
         Ok(host) => host,
         Err(error) => {
-            let def_host = "https://meteoinfo.ru";
             info!("Failed to read from environment host: {}", error);
-            info!("Using default host: {}", def_host);
-            def_host.to_string()
+            info!("Using default host: {}", GLV_METEOINFO_HOST_DEFAULT);
+            GLV_METEOINFO_HOST_DEFAULT.to_string()
         }
     }
 }
@@ -128,7 +128,7 @@ fn get_synaptic_url(host: &String) -> String {
 }
 
 fn parse_synaptic_from_content(content: String) -> Vec<String> {
-        let document = Html::parse_document(&content);
+    let document = Html::parse_document(&content);
     let sel = Selector::parse("meta[property='og:image']")
         .expect("Selector parsing failed!");       
     let ss = document.select(&sel);
