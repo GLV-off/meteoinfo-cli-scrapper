@@ -11,6 +11,7 @@ const MAIN_START_Y: i32 = 100;
 fn main() -> Result<(), FltkError> {
     let app = app::App::default();
 
+    /* Creating Main Window */
     let mut wind = Window::new(
         MAIN_START_X, MAIN_START_Y, 
         MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT,
