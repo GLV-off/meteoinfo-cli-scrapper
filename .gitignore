@@ -1,6 +1,9 @@
 /target
 Cargo.lock
 
+# Специфичная конфигурация логирования
+log.yaml 
+
 *.gif
 *.png
 *.html

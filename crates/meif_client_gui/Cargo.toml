@@ -1,0 +1,8 @@
+[package]
+name = "meif_client_gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+meif_lib = { path = "../meif_lib"}
+fltk = { version = "1.5.8", features = ["fltk-bundled"] }

@@ -1,73 +1,33 @@
+use log::{info, error};
 use scraper::{Html, Selector, html::Select};
 
-use log::{error, info};
-use simplelog::{
-    ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode,
-    WriteLogger,
-};
+pub mod consts;
 
-const GLV_METEOINFO_HOST: &str = "";
-const FILENAME_SYNAPT: &str = "content_synaptic.html";
-const FILENAME_IMAGES: &str = "content_images.html";
-const DEFAULT_LOG_FILENAME: &str = "meteo_log.log";
-
-#[tokio::main]
-async fn main() -> Result<(), ureq::Error> {
-    setup_logging();
-
-    let host = get_host();
-    let url_images = get_images_url(&host);
-    let content = get_content(url_images, FILENAME_IMAGES)?;
-    let images_paths = parse_images_from_content(content);
-    process_images_gif(&host, images_paths)?;
-
-    let url_synaptic = get_synaptic_url(&host);
-    let content = get_content(url_synaptic, FILENAME_SYNAPT)?;
-    let synaptic_paths = parse_synaptic_from_content(content);
-    process_images_png(synaptic_paths)?;
- 
-    Ok(())
+pub fn setup_logging() {
+    const LOG_CFG: &str = "log.yaml";
+    log4rs::init_file(LOG_CFG, Default::default()).unwrap();
 }
 
-fn setup_logging() {
-    // Настройка логирования по всему продукту
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        WriteLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            std::fs::File::create(DEFAULT_LOG_FILENAME).unwrap(),
-        ),
-    ])
-    .unwrap();
-}
-
-fn get_host() -> String {
+pub fn get_host() -> String {
     match get_meteoinfo_host() {
         Ok(host) => host,
         Err(error) => {
-            let def_host = "https://meteoinfo.ru";
             info!("Failed to read from environment host: {}", error);
-            info!("Using default host: {}", def_host);
-            def_host.to_string()
+            info!("Using default host: {}", consts::GLV_METEOINFO_HOST_DEFAULT);
+            consts::GLV_METEOINFO_HOST_DEFAULT.to_string()
         }
     }
 }
 
-fn get_images_url(host: &String) -> String {
+pub fn get_images_url(host: &String) -> String {
     format!("{}/satellite-images", host)
 }
 
-fn get_meteoinfo_host() -> Result<String, std::env::VarError> {
-    std::env::var(GLV_METEOINFO_HOST)
+pub fn get_meteoinfo_host() -> Result<String, std::env::VarError> {
+    std::env::var(consts::GLV_METEOINFO_HOST)
 }
 
-fn get_content(url: String, filename: &str) -> Result<String, ureq::Error> {
+pub fn get_content(url: String, filename: &str) -> Result<String, ureq::Error> {
     Ok(if std::fs::exists(filename)? {
         info!("parsing filename");
         get_content_file(filename, |e| error!("Error reading file: {}", e))
@@ -77,7 +37,7 @@ fn get_content(url: String, filename: &str) -> Result<String, ureq::Error> {
     })
 }
 
-fn get_content_file<C: FnOnce(std::io::Error)>(
+pub fn get_content_file<C: FnOnce(std::io::Error)>(
     path: &str,
     on_error: C,
 ) -> String {
@@ -90,7 +50,7 @@ fn get_content_file<C: FnOnce(std::io::Error)>(
     }
 }
 
-fn get_content_web(url: String) -> Result<String, ureq::Error> {
+pub fn get_content_web(url: String) -> Result<String, ureq::Error> {
     let mut resp = ureq::get(url).call()?;
 
     let cont = resp
@@ -100,7 +60,7 @@ fn get_content_web(url: String) -> Result<String, ureq::Error> {
     Ok(cont)
 }
 
-fn parse_images_from_content(content: String) -> Vec<String> {
+pub fn parse_images(content: String) -> Vec<String> {
     let document = Html::parse_document(&content);
     let sel = Selector::parse("a[href^='/images/media/satel/res']")
         .expect("Selector parsing failed!");
@@ -109,7 +69,7 @@ fn parse_images_from_content(content: String) -> Vec<String> {
     images_paths
 }
 
-fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
+pub fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
     for (index, image_path) in images
         .iter()
         .enumerate()
@@ -123,12 +83,12 @@ fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error
     Ok(())
 }
 
-fn get_synaptic_url(host: &String) -> String {
+pub fn get_synaptic_url(host: &String) -> String {
     format!("{}/mapsynop", host)
 }
 
-fn parse_synaptic_from_content(content: String) -> Vec<String> {
-        let document = Html::parse_document(&content);
+pub fn parse_synaptic_from_content(content: String) -> Vec<String> {
+    let document = Html::parse_document(&content);
     let sel = Selector::parse("meta[property='og:image']")
         .expect("Selector parsing failed!");       
     let ss = document.select(&sel);
@@ -142,7 +102,7 @@ fn parse_synaptic_from_content(content: String) -> Vec<String> {
     local
 }
 
-fn process_images_png(images: Vec<String>) -> Result<(), ureq::Error> {
+pub fn process_images_png(images: Vec<String>) -> Result<(), ureq::Error> {
     for (index, image_path) in images
         .iter()
         .enumerate()
@@ -156,7 +116,7 @@ fn process_images_png(images: Vec<String>) -> Result<(), ureq::Error> {
     Ok(())    
 }
 
-fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error> {
+pub fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error> {
     let mut resp = ureq::get(url).call()?;
 
     let cont = resp
@@ -167,7 +127,7 @@ fn get_content_bytes(url: String) -> Result<Vec<u8>, ureq::Error> {
     Ok(cont)
 }
 
-fn get_images_paths(sel: Select) -> Vec<String> {
+pub fn get_images_paths(sel: Select) -> Vec<String> {
     sel.map(|x| {
         x.value()
             .attr("href")
