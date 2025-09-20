@@ -1,5 +1,6 @@
 use log::{info, error};
 use scraper::{Html, Selector, html::Select};
+use chrono::Utc;
 
 pub mod consts;
 
@@ -64,9 +65,11 @@ pub fn parse_images(content: String) -> Vec<String> {
     let document = Html::parse_document(&content);
     let sel = Selector::parse("a[href^='/images/media/satel/res']")
         .expect("Selector parsing failed!");
+    get_images_paths(document.select(&sel))
+}
 
-    let images_paths = get_images_paths(document.select(&sel));
-    images_paths
+pub fn datetime_filename_str() -> String {
+    Utc::now().format("%Y%m%d_%H%M").to_string()
 }
 
 pub fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
@@ -78,7 +81,12 @@ pub fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::E
 
         let image_content = get_content_bytes(String::from(host) + image_path)?;
 
-        std::fs::write(format!("img_{}.gif", index), image_content)?;
+        std::fs::write(
+            format!("img_{}_{}.gif", index, 
+                datetime_filename_str()
+            ), 
+            image_content
+        )?;
     }
     Ok(())
 }
@@ -111,7 +119,12 @@ pub fn process_images_png(images: Vec<String>) -> Result<(), ureq::Error> {
 
         let image_content = get_content_bytes(image_path.to_string())?;
 
-        std::fs::write(format!("syn_img_{}.png", index), image_content)?;
+        std::fs::write(
+            format!("syn_img_{}_{}.png", index, 
+                datetime_filename_str()
+            ), 
+            image_content
+        )?;
     }
     Ok(())    
 }
