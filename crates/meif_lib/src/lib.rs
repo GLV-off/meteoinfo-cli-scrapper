@@ -1,6 +1,6 @@
 use log::{info, error};
 use scraper::{Html, Selector, html::Select};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 pub mod consts;
 
@@ -9,25 +9,40 @@ pub fn setup_logging() {
     log4rs::init_file(LOG_CFG, Default::default()).unwrap();
 }
 
+/**
+ * Получение хоста через переменную окружения с обработкой
+*/
 pub fn get_host() -> String {
-    match get_meteoinfo_host() {
-        Ok(host) => host,
-        Err(error) => {
+    get_meteoinfo_host()
+        .unwrap_or_else(|error| {
             info!("Failed to read from environment host: {}", error);
             info!("Using default host: {}", consts::GLV_METEOINFO_HOST_DEFAULT);
             consts::GLV_METEOINFO_HOST_DEFAULT.to_string()
-        }
-    }
+        })
 }
 
+/**
+ * На основании хоста, сконструировать относительный путь до 
+ * изображений.
+ */ 
 pub fn get_images_url(host: &String) -> String {
     format!("{}/satellite-images", host)
 }
 
+/**
+ * Получение хоста через переменную окружения без обработки.
+ * То через какую переменную мы работаем - выясняется через
+ * константу GLV_METEOINFO_HOST
+*/
 pub fn get_meteoinfo_host() -> Result<String, std::env::VarError> {
     std::env::var(consts::GLV_METEOINFO_HOST)
 }
 
+/**
+ * Обобщаяющая узловая функция получения HTML контента для обработки.
+ * Получить контент по URL если файла по filename не существует. 
+ * Если файл по filename существует то попробуем сначала распрасить его
+*/
 pub fn get_content(url: String, filename: &str) -> Result<String, ureq::Error> {
     Ok(if std::fs::exists(filename)? {
         info!("parsing filename");
@@ -38,6 +53,9 @@ pub fn get_content(url: String, filename: &str) -> Result<String, ureq::Error> {
     })
 }
 
+/**
+ * Прочитать контент из файла с базовой обработкой 
+ */
 pub fn get_content_file<C: FnOnce(std::io::Error)>(
     path: &str,
     on_error: C,
@@ -51,16 +69,20 @@ pub fn get_content_file<C: FnOnce(std::io::Error)>(
     }
 }
 
+/**
+ * Получить контент по сети по URL и вернуть его как текст
+ */ 
 pub fn get_content_web(url: String) -> Result<String, ureq::Error> {
-    let mut resp = ureq::get(url).call()?;
-
-    let cont = resp
+    ureq::get(url)
+        .call()?
         .body_mut()
-        .read_to_string()?;
-
-    Ok(cont)
+        .read_to_string()
 }
 
+/**
+ * Распознать ссылки на изображения 
+ * из текста HTML страницы
+*/
 pub fn parse_images(content: String) -> Vec<String> {
     let document = Html::parse_document(&content);
     let sel = Selector::parse("a[href^='/images/media/satel/res']")
@@ -68,8 +90,19 @@ pub fn parse_images(content: String) -> Vec<String> {
     get_images_paths(document.select(&sel))
 }
 
+/**
+ * Сконструировать форматированную строку текущей даты и времени 
+*/
 pub fn datetime_filename_str() -> String {
-    Utc::now().format("%Y%m%d_%H%M").to_string()
+    datetime_filename_str_raw(Utc::now())
+}
+
+/**
+ * Сконструировать форматированную строку на основе 
+ * поданной даты\времени.
+ */
+pub fn datetime_filename_str_raw(dt: DateTime<Utc>) -> String {
+    dt.format("%Y%m%d_%H%M").to_string()
 }
 
 pub fn process_images_gif(host: &str, images: Vec<String>) -> Result<(), ureq::Error> {
@@ -95,7 +128,7 @@ pub fn get_synaptic_url(host: &String) -> String {
     format!("{}/mapsynop", host)
 }
 
-pub fn parse_synaptic_from_content(content: String) -> Vec<String> {
+pub fn parse_synaptic(content: String) -> Vec<String> {
     let document = Html::parse_document(&content);
     let sel = Selector::parse("meta[property='og:image']")
         .expect("Selector parsing failed!");       

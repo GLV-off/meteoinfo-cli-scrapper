@@ -12,7 +12,7 @@ async fn main() -> Result<(), ureq::Error> {
 
     let url_synaptic = get_synaptic_url(&host);
     let content = get_content(url_synaptic, consts::FILENAME_SYNAPT)?;
-    let synaptic_paths = parse_synaptic_from_content(content);
+    let synaptic_paths = parse_synaptic(content);
     process_images_png(synaptic_paths)?;
  
     Ok(())
