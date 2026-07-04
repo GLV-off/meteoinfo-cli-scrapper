@@ -1,3 +1,5 @@
+mod config;
+
 use clap::Parser;
 use log::{debug, error, info};
 use std::path::Path;
@@ -5,46 +7,6 @@ use meif_lib::consts::GLV_METEOINFO_HOST_DEFAULT;
 
 /* main logging configuration filename */
 pub const LOG_CFG: &str = "log.yaml";
-
-/*
-    Main CLI application command line argument's
-*/
-#[derive(Debug, Parser)]
-pub struct GrubConfig {
-    #[arg(short, long)]
-    work_dir: String,
-
-    #[arg(short, long)]
-    cfg: String,
-}
-
-pub struct GrubEnv {
-    root: String,
-    work_dir: String
-}
-
-impl GrubEnv {
-    pub fn new(wd: &str) -> Self {
-        Self { root: ".".to_string(), work_dir: wd.to_string() } 
-    }
-
-    pub fn set_root_path(&mut self, root: String) {
-        self.root = root;
-    }
-
-    pub fn set_root_path_str(&mut self, root: &str) {
-        self.root = root.to_string();
-    }
-
-    pub fn get_work_dir(&self) -> String {
-        self.root + "\\" + self.work_dir.as_str()
-    }
-}
-
-pub fn get_application_full_path() -> String {
-    let variables: Vec<String> = std::env::args().collect();
-    variables[0].clone()
-}
 
 /*
     Entry point
@@ -75,6 +37,14 @@ pub async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/*
+
+*/
+pub fn get_application_full_path() -> String {
+    let variables: Vec<String> = std::env::args().collect();
+    variables[0].clone()
 }
 
 /*
