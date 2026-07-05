@@ -1,0 +1,26 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { ImageSection } from "image_section.slint";
+import { Styles } from "styles.slint";
+import { Captions } from "captions.slint";
+
+export component MainWindow inherits Window {
+    in-out property <int> counter: 42;
+    callback request-increase-value();
+    callback request-decrease-value();
+    Flickable {
+        VerticalBox {
+            Text {
+                text: Captions.caption_images;
+                font-weight: FontWeight.extra-bold;
+                font-size: Styles.caption_large_sz;
+            }
+            ImageSection  {
+                title: Captions.caption_satelite_images;
+            }
+            ImageSection {
+                title: Captions.caption_synaptic_images;
+            }
+        }
+
+    }
+}

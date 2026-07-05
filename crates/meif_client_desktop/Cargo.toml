@@ -1,0 +1,11 @@
+[package]
+name = "meif_client_desktop"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+slint = { version ="1.16.1", features = ["backend-android-activity-06"] }
+meif_client_ui_shared = { path = "../meif_client_ui_shared" }
+
+[build-dependencies]
+slint-build = "1.16.1"

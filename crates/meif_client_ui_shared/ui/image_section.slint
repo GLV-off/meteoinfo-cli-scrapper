@@ -1,0 +1,48 @@
+import { Button, ListView, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { Styles } from "styles.slint";
+import { Captions } from "captions.slint";
+
+struct ImageBlock {
+    path: image
+}
+
+export component ImageSection inherits Rectangle {
+    in-out property <string> title: "Unnamed";
+
+    in-out property <[ImageBlock]> images: [
+        { path: @image-url("assets//img.png")},
+        { path: @image-url("assets//img.png")},
+        { path: @image-url("assets//img.png")},
+        { path: @image-url("assets//img.png")},
+        { path: @image-url("assets//img.png")},
+        { path: @image-url("assets//img.png")}
+    ];
+
+    VerticalLayout {        
+        padding: 8px;
+        spacing: 8px;
+        Text {
+            min-width: 256px;
+            max-height: 256px;
+            text: root.title;
+            font-weight: FontWeight.bold;
+            font-size: Styles.caption_middle_sz;
+            overflow: TextOverflow.elide;
+        }
+        ScrollView {
+            // viewport-width: 1024px;
+            // interactive: true;
+            // viewport-y: 100px;
+            // interactive: true;
+            min-height: 128px;
+            HorizontalLayout { 
+                for im in root.images: Image  {
+                    source: im.path;
+                    width: 128px;
+                    height: 128px;
+                }  
+                
+            }
+        }       
+    }
+}
