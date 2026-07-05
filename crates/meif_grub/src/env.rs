@@ -1,6 +1,6 @@
 pub struct GrubEnv {
-    root: String,
-    work_dir: String
+    pub root: String,
+    pub work_dir: String
 }
 
 impl GrubEnv {
@@ -17,6 +17,6 @@ impl GrubEnv {
     }
 
     pub fn get_work_dir(&self) -> String {
-        self.root + "\\" + self.work_dir.as_str()
+        String::from(&self.root) + "\\" + self.work_dir.as_str()
     }
 }

@@ -1,9 +1,12 @@
 mod config;
+mod env;
 
 use clap::Parser;
 use log::{debug, error, info};
 use std::path::Path;
+
 use meif_lib::consts::GLV_METEOINFO_HOST_DEFAULT;
+use config::GrubConfig;
 
 /* main logging configuration filename */
 pub const LOG_CFG: &str = "log.yaml";
@@ -13,30 +16,37 @@ pub const LOG_CFG: &str = "log.yaml";
 */
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
-    setup_log();
-
+    setup_logging();
     match GrubConfig::try_parse() {
-        Ok(app) => {
-            let mut env = GrubEnv::new(&app.work_dir);
-            env.set_root_path(get_application_full_path());
-
-            match create_dir_if_not_exist(&env.work_dir) {
-                Err(error) => error!("create_dir_if_not_exist: {}", error),
-                _ => info!("CLI config parsed"),
-            }
-
-            let hst = String::from(GLV_METEOINFO_HOST_DEFAULT);
-            let dir = app.work_dir;
-
-            match download_images(hst, &dir) {
-                Err(error) => error!("download_images: {}", error),
-                _ => info!("images download finished"),
-            }
-        }
+        Ok(app) => imp::run(app),
         Err(error) => error!("GrubConfig::try_parse: {}", error),
     }
 
     Ok(())
+}
+
+pub mod imp {
+    use crate::*;
+    use crate::config::GrubConfig;
+    use crate::env::GrubEnv;
+    
+    pub fn run(app: GrubConfig) {
+        let mut env = GrubEnv::new(&app.work_dir);
+        env.set_root_path(get_application_full_path());
+
+        match create_dir_if_not_exist(&env.work_dir) {
+            Err(error) => error!("create_dir_if_not_exist: {}", error),
+            _ => info!("CLI config parsed"),
+        }
+
+        let hst = String::from(crate::GLV_METEOINFO_HOST_DEFAULT);
+        let dir = app.work_dir;
+
+        match crate::download_images(hst, &dir) {
+            Err(error) => error!("download_images: {}", error),
+            _ => info!("images download finished"),
+        }
+    }
 }
 
 /*
@@ -50,7 +60,7 @@ pub fn get_application_full_path() -> String {
 /*
     Initialization of logging
 */
-pub fn setup_log() {
+pub fn setup_logging() {
     match log4rs::init_file(LOG_CFG, Default::default()) {
         Err(error) => error!("setup_application: error: {}", error),
         _ => info!("logging initialized"),
